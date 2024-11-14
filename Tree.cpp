@@ -26,6 +26,7 @@ void Tree::recountLayers(int level)
 	}
 }
 
+
 void Tree::calcFitness(double** x, double* y, int size,double K1)
 {
 	double error = 0;
@@ -293,7 +294,7 @@ void Tree::trainWithDE(double** x, double* y, int size, double K1)
 
 
 	DiffEvolution DE(func, limits, numVertices, "targetToBest1", "max");
-	DE.startSearch(0.01, 0.5, 0.5, 20, 20);
+	DE.startSearch(0.01, 0.5, 0.5, 50, 50);
 	int i = 0;
 	double* coef = DE.getBestCoordinates();
 	changeCoef(coef, i);

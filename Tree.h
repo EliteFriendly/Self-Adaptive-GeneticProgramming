@@ -87,7 +87,6 @@ public:
 		}
 		
 	}
-
 	void calcFitness(double** x, double* y, int size,double K1);
 	double getFitness() {
 		return fitness;

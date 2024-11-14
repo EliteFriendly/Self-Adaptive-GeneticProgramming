@@ -173,10 +173,21 @@ void AdaptiveGeneticProgramming::recalcProbabilities()
 	winner = findWinner(chosenMut, 4, arrFitness);
 	changeProbabilities(mutProbabilities, winner, 4);
 
+	saveProbabilities();
+
 }
 
 void AdaptiveGeneticProgramming::startTrain(double** xin, int ammInputs, double* yin, int size, int numIndividuals, int numGeneration)
 {
+
+	fSel.open("Probabilities/ProbabilSel_" + to_string(numberFile)+".txt");
+
+	fCross.open("Probabilities/ProbabilCross_" + to_string(numberFile) + ".txt");
+	fMut.open("Probabilities/ProbabilMut_" + to_string(numberFile) + ".txt");
+
+	saveProbabilities();
+
+
 	AdaptiveGeneticProgramming::size = size;
 	AdaptiveGeneticProgramming::ammInputs = ammInputs;
 
@@ -218,7 +229,7 @@ void AdaptiveGeneticProgramming::startTrain(double** xin, int ammInputs, double*
 	int numParent1, numParent2;
 
 	for (int i = 0; i < numGeneration; i++) {
-		
+		cout << "Номер генерации = " << i << endl;
 		setSelectionsArrays();
 		for (int j = 0; j < numIndividuals; j++) {
 			//cout << "Номер генерации = " << i <<", Номер индивида = " << j << endl;

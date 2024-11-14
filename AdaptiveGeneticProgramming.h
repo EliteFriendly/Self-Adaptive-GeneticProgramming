@@ -8,6 +8,8 @@
 #include "SelectionGP.h"
 #include "FormingGP.h"
 #include <thread>
+#include <fstream>
+
 class AdaptiveGeneticProgramming
 {
 private:
@@ -24,8 +26,9 @@ private:
 	int ammInputs;//Количество осей или входов
 	double* y;
 	int size;//Количество точек
+	int numberFile = 1;//Используется для именовании файла
 
-
+	int ammSel = 5;
 	SelectionGP** selection = nullptr;
 	/*
 	0-ранговая
@@ -34,8 +37,9 @@ private:
 	*/
 	double* selProbabilities = nullptr;
 	int* chosenSel = nullptr;
+	ofstream fSel;
 
-
+	int ammCross = 4;
 	CrossoverGP** crossover = nullptr;
 	/*
 	0-пустое
@@ -45,8 +49,9 @@ private:
 	*/
 	double* crossProbabilities = nullptr;
 	int* chosenCross = nullptr;
+	ofstream fCross;
 
-
+	int ammMut = 4;
 	MutationGP** mutation = nullptr;
 	/*
 	0-дерево
@@ -56,7 +61,7 @@ private:
 	*/
 	double* mutProbabilities = nullptr;
 	int* chosenMut = nullptr;
-
+	ofstream fMut;
 
 	FormingGP forming;
 
@@ -90,6 +95,18 @@ private:
 	
 	void recalcProbabilities();
 
+	void saveProbabilities() {
+		for (int i = 0; i < ammSel; i++) {
+			fSel << selProbabilities[i]<<'\t';
+		}
+		fSel << endl;
+		for (int i = 0; i < ammMut; i++) {
+			fCross << crossProbabilities[i] << '\t';
+			fMut << mutProbabilities[i] << '\t';
+		}
+		fCross << endl;
+		fMut << endl;
+	}
 
 public:
 	AdaptiveGeneticProgramming(double K1, int treeDepth) :K1(K1), treeDepth(treeDepth){
@@ -136,9 +153,13 @@ public:
 		for (int i = 0; i < size; i++) {
 			sum += pow(bestIndividual.getValue(x[i]) - y[i], 2);
 		}
-		sum = pow(sum / size, 0.5);
+		sum = pow(sum , 0.5) / double(size);
 		return sum;
 
+	}
+
+	void numFile(int num) {
+		numberFile = num;
 	}
 
 	~AdaptiveGeneticProgramming() {
@@ -148,6 +169,7 @@ public:
 		if (arrayChildren != nullptr) {
 			delete[] arrayChildren;
 		}
+
 	}
 };
 
