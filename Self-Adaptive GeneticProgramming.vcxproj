@@ -24,6 +24,7 @@
     <ProjectGuid>{2e1e71ef-ac17-4a1f-80ca-afa06ae0b581}</ProjectGuid>
     <RootNamespace>SelfAdaptiveGeneticProgramming</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Self-Adaptive GeneticProgramming Cluster</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

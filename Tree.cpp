@@ -31,6 +31,19 @@ void Tree::calcFitness(double** x, double* y, int size,double K1)
 {
 	double error = 0;
 
+	clustering(x, size);
+
+	int* sizeClust = new int[numCluster];
+	for (int i = 0; i < numCluster; i++) {
+		sizeClust = 0;
+	}
+
+
+	for (int i = 0; i < size; i++) {
+		sizeClust[label[i] - 1]++;
+	}
+
+
 	for (int i = 0; i < size; i++) {
 		error += pow(y[i] - getValue(x[i]), 2);
 	}
@@ -39,6 +52,7 @@ void Tree::calcFitness(double** x, double* y, int size,double K1)
 		cout << "Фитнес равен NAN";
 		exit(0);
 	}
+	delete[] sizeClust;
 }
 
 Tree::Tree(int d, int numInputs)
@@ -257,6 +271,10 @@ void Tree::changeNode(int search, Tree& newNode)//Отличие от replace в том, что 
 
 void Tree::trainWithDE(double** x, double* y, int size, double K1)
 {
+	if (label == nullptr) {
+		label = new int(size);
+	}
+
 
 
 	double **xDE = new double* [size];
@@ -306,4 +324,88 @@ void Tree::trainWithDE(double** x, double* y, int size, double K1)
 		delete[] xDE[i];
 	}
 	delete[] xDE;
+}
+
+
+
+
+double Tree::distanceAverageIn(double** data, int* sizeClust, int str, int col, int cluster) {
+
+	double sum = 0, dist = 0;
+
+	for (int i = 0; i < str; i++) {
+		for (int j = 0; j < str; j++) {
+			if (label[i] != label[j] or label[i] != cluster)
+				continue;
+			dist = 0;
+			for (int w = 0; w < col; w++) {
+
+				dist += pow(data[i][w] - data[j][w], 2);
+
+			}
+			dist = pow(dist, 0.5);
+			sum += dist;
+
+
+
+		}
+	}
+
+	sum = (sum / (sizeClust[cluster-1])) / (sizeClust[cluster - 1] - 1);
+
+	return sum;
+
+}
+double Tree::distanceAverageOut(double** data, int* sizeClust, int str, int col) {
+
+	double sum = 0, dist = 0;
+
+
+	for (int i = 0; i < str; i++) {
+		for (int j = 0; j < str; j++) {
+			if (label[i] == label[j])
+				continue;
+
+			dist = 0;
+			for (int w = 0; w < col; w++) {
+
+				dist += pow(data[i][w] - data[j][w], 2);
+
+			}
+			dist = pow(dist, 0.5);
+			sum += dist;
+
+
+
+		}
+	}
+
+	for (int i = 0; i < numCluster; i++) {
+		sum /= sizeClust[i];
+	}
+
+	return sum;
+
+}
+
+void Tree::clustering(double** data, int str)
+{
+	
+	if (numCluster == 2) {
+
+		for (int i = 0; i < str; i++) {
+			if (getValue(data[i]) > 0) {
+				label[i] = 1;
+			}
+			else {
+				label[i] = 2;
+			}
+		}
+
+
+
+	}
+
+
+
 }

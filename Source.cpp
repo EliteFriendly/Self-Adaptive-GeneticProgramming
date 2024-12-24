@@ -7,7 +7,7 @@
 #include "AdaptiveGeneticProgramming.h"
 #include <time.h>
 using namespace std;
-int dimension = 2;
+int dimension = 1;
 const double PI = 3.1415926535;
 
 double func0(double x) {
@@ -21,8 +21,8 @@ double func1(double x) {
 double func2(double x) {
 	return pow(10*x,0.5);
 }
-double func3(double x) {
-	return pow(x, 1.5) + 10 * sin(x);
+double func3(double* x) {
+	return pow(x[0], 1.5) + 10 * sin(x[0]);
 }
 
 
@@ -37,6 +37,18 @@ double funcRastrigin(double *x) {
 	}
 	return y;
 }
+
+double funcRosenbrock(double* x) {
+	double y = 0;
+	for (int i = 0; i < dimension - 1; i++) {
+		y += (100 * pow(pow(x[i], 2) - x[i + 1], 2) + pow(x[i] - 1, 2));
+	}
+	return y;
+}
+
+
+
+
 
 /*
 * ÇÀÏÎÌÍÈÒÜ 
@@ -54,13 +66,16 @@ double funcRastrigin(double *x) {
 
 
 *×òî íóæíî èçìåíèòü:
-Äîáàâèòü äåñòðóêòîðîâ âî âñå ùåëè, ÷òîáû íå áûëî ïåðåïîëíåíèÿ ïàìÿòè	
+Ñäåëàòü ïîèñê ìèíèìàëüíîãî ðàññòîÿíèÿ äî äðóãîãî êëàñòåðà
+
 
 
 
 *Îïòèìèçàöèÿ ìîìåíò:
 
 Â ÑÅËÅÊÖÈÈ 5 ÐÀÇ ÑÎÐÒÈÐÓÅÒÑß ÌÀÑÑÈÂ ÈÍÄÈÂÈÄÎÂ
+
+ÍÅ ÓÄÀËßÅÒÑß ÌÀÑÑÈÂ ÐÀÇÌÅ×ÅÍÍÛÕ ÈÍÄÈÂÈÄÎÂ
 
 */
 
@@ -117,12 +132,12 @@ void qsortRecursive(int* mas, int size) {
 
 void doResearch(int number, int setRand) {
 
-	int points = 500;
+	int points = 100;
 	double** x = new double* [points];
 	double* y = new double[points];
 	srand(setRand);
 	mt19937 gen(rand());
-	uniform_real_distribution<> dist(-2, 2);
+	uniform_real_distribution<> dist(0, 10);
 	ofstream out("Points/Out_"+to_string(number) + ".txt");
 
 	for (int i = 0; i < points; i++) {
@@ -133,7 +148,7 @@ void doResearch(int number, int setRand) {
 
 
 	for (int i = 0; i < points; i++) {
-		y[i] = addNoise(funcRastrigin(x[i]), 10);
+		y[i] = addNoise(func3(x[i]), 10);
 		for (int j = 0; j < dimension; j++)
 			out << x[i][j] << '\t';
 		out << y[i] << endl;
@@ -189,7 +204,7 @@ void doResearch(int number, int setRand) {
 
 	AdaptiveGeneticProgramming proba(0.7, 3);
 	proba.numFile(number);
-	proba.startTrain(XTrain, dimension, YTrain, int(0.8*points), 80, 80);
+	proba.startTrain(XTrain, dimension, YTrain, int(0.8*points), 50, 50);
 
 
 	ofstream res("Results/Input_" + to_string(number) + ".txt");
@@ -224,11 +239,19 @@ void doResearch(int number, int setRand) {
 
 
 void main() {
-	setlocale(0, "");
-	for (int i = 14; i < 21; i++) {
-		cout << "Íîìåð èññëåäîâàíèÿ = " << i << endl;
-		doResearch(i, i);
+	
+	int str = 5;
+	int col = 1;
+
+	double** X = new double* [str];
+
+	for (int i = 0; i < str; i++) {
+		X[i] = new double[col];
+		X[i][0] = i;
 	}
+
+	//cout<<distanceAvereage(X, str, col);
+
 
 
 

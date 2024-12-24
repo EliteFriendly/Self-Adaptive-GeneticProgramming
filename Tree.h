@@ -16,7 +16,7 @@ private:
 	int numVertices = 0;//Количество вершин
 	int numNodes;//Количество узлов ниже
 	int layerLevel;//На каком уровне относительно начала находится узел
-
+	int numCluster = 2;//Количество кластеров
 
 	double coef = NULL;//Коэффициент в вершинах
 	int numInput = NULL;//Номер входа
@@ -26,7 +26,8 @@ private:
 
 	bool unarFuncUs = false;//Используется ли унарная функция true/false
 	bool lastVertice = false;//Термальное ли множество
-
+	
+	int* label = nullptr;//Размеченные данные
 	Tree* left = nullptr;
 	Tree* right = nullptr;
 
@@ -37,7 +38,7 @@ private:
 		[](double x) {return sin(x); },
 		[](double x) {return cos(x); },
 		[](double x) {if (x == 0) return 100000.0; return log(abs(x)); },
-		[](double x) {if (x >= 10) return exp(10); if (x <= -10) return(exp(-10)); return exp(x); }
+		[](double x) {if (x >= 10) return exp(10); if (x <= -10) return(0.0); return exp(x); }
 
 	};//Выборка из унарных функций
 	vector<function <double(double, double)>> binaryFunc = {
@@ -48,14 +49,19 @@ private:
 	};//Выборка из бинарных функций
 
 
-	
+	double distanceAverageIn(double** data, int* label, int str, int col, int cluster);
+	double distanceAverageOut(double** data, int* label, int str, int col);
+	void clustering(double** data, int str);
 
 public:
 	Tree() {}
 	Tree(const Tree &copy) :numberFunc(copy.numberFunc), lastVertice(copy.lastVertice),
 		unarFuncUs(copy.unarFuncUs), coef(copy.coef),numVertices(copy.numVertices),numNodes(copy.numNodes),fitness(copy.fitness),
-		layerLevel(copy.layerLevel), numInput(copy.numInput), ammInputs(copy.ammInputs)
+		layerLevel(copy.layerLevel), numInput(copy.numInput), ammInputs(copy.ammInputs), numCluster(copy.numCluster)
 	{
+
+		label = copy.label;
+
 		/*this->operator=(copy);
 		cout << 1;*/
 		//Выделение памяти чтобы не было кучи взаимосвязанных индивидлв
@@ -132,6 +138,9 @@ public:
 
 	void trainWithDE(double** x, double* y, int size, double K1);
 
+
+
+
 	void randFunc() {//Используется для оператора мутации
 		if (lastVertice) {
 			int r = rand() % (ammInputs + 1);//Считается с коэф
@@ -170,6 +179,9 @@ public:
 
 	Tree operator =(const Tree& copy) {
 
+		
+		label = copy.label;
+		numCluster = copy.numCluster;
 
 		numberFunc = copy.numberFunc;
 		layerLevel = copy.layerLevel;
