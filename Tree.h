@@ -17,6 +17,7 @@ private:
 	int numNodes;//Количество узлов ниже
 	int layerLevel;//На каком уровне относительно начала находится узел
 	int numCluster = 2;//Количество кластеров
+	int size;//Количество данных
 
 	double coef = NULL;//Коэффициент в вершинах
 	int numInput = NULL;//Номер входа
@@ -49,8 +50,8 @@ private:
 	};//Выборка из бинарных функций
 
 
-	double distanceAverageIn(double** data, int* label, int str, int col, int cluster);
-	double distanceAverageOut(double** data, int* label, int str, int col);
+	double distanceAverageIn(double** data, int* label, int str, int cluster);
+	double distanceAverageOut(double** data, int* label, int str);
 	void clustering(double** data, int str);
 
 public:
@@ -60,7 +61,17 @@ public:
 		layerLevel(copy.layerLevel), numInput(copy.numInput), ammInputs(copy.ammInputs), numCluster(copy.numCluster)
 	{
 
-		label = copy.label;
+		if (copy.label != nullptr) {
+			if (label != nullptr) {
+				delete[] label;
+				label = nullptr;
+			}
+			label = new int[copy.size];
+			size = copy.size;
+			for (int i = 0; i < size; i++) {
+				label[i] = copy.label[i];
+			}
+		}
 
 		/*this->operator=(copy);
 		cout << 1;*/
@@ -93,12 +104,15 @@ public:
 		}
 		
 	}
-	void calcFitness(double** x, double* y, int size,double K1);
+	void calcFitness(double** x, int size,double K1);
 	double getFitness() {
 		return fitness;
 	}
 	Tree(int d,int numInputs);
 	string getFunc();
+	int* getLabel() {
+		return label;
+	}
 
 	bool getUnar() {
 		return unarFuncUs;
@@ -124,6 +138,10 @@ public:
 		return ammInputs;
 	}
 	~Tree() {
+		if (label != nullptr) {
+			delete[] label;
+			label = nullptr;
+		}
 		if (left != nullptr) {
 			delete left;
 			left = nullptr;
@@ -136,7 +154,7 @@ public:
 	void replaceNode(int, Tree&);
 	void changeNode(int, Tree&);
 
-	void trainWithDE(double** x, double* y, int size, double K1);
+	void trainWithDE(double** x, int size, double K1);
 
 
 
@@ -179,8 +197,21 @@ public:
 
 	Tree operator =(const Tree& copy) {
 
-		
-		label = copy.label;
+		if (copy.label != nullptr) {
+			if (label != nullptr) {
+				delete[] label;
+				label = nullptr;
+			}
+			label = new int[copy.size];
+			size = copy.size;
+			for (int i = 0; i < size; i++) {
+				label[i] = copy.label[i];
+			}
+			
+		}
+
+
+
 		numCluster = copy.numCluster;
 
 		numberFunc = copy.numberFunc;

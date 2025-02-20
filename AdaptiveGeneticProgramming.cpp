@@ -43,12 +43,12 @@ Tree AdaptiveGeneticProgramming::createChild(int numInd)
 
 }
 
-void AdaptiveGeneticProgramming::threadsFitnessCalc(int ammThread)
+void AdaptiveGeneticProgramming::threadsFitnessCalc(double**x,int ammThread)
 {
 	if (ammThread == 1) {
 
 		for (int i = 0; i < numIndividuals; i++) {
-			arrayChildren[i].trainWithDE(x, y, size, K1);
+			arrayChildren[i].trainWithDE(x,  size, K1);
 		}
 		return;
 	}
@@ -67,11 +67,11 @@ void AdaptiveGeneticProgramming::threadsFitnessCalc(int ammThread)
 
 	thr[0] = thread([&]() {
 		for (int i = 0; i < t; i++) {
-			arrayChildren[i].trainWithDE(x, y, size, K1);
+			arrayChildren[i].trainWithDE(x,  size, K1);
 		}
 		});
 	for (int i = t; i < numIndividuals; i++) {
-		arrayChildren[i].trainWithDE(x, y, size, K1);
+		arrayChildren[i].trainWithDE(x,  size, K1);
 	}
 	
 	thr[0].join();
@@ -177,7 +177,7 @@ void AdaptiveGeneticProgramming::recalcProbabilities()
 
 }
 
-void AdaptiveGeneticProgramming::startTrain(double** xin, int ammInputs, double* yin, int size, int numIndividuals, int numGeneration)
+void AdaptiveGeneticProgramming::startTrain(double** x, int ammInputs, int size, int numIndividuals, int numGeneration)
 {
 
 	fSel.open("Probabilities/ProbabilSel_" + to_string(numberFile)+".txt");
@@ -191,15 +191,7 @@ void AdaptiveGeneticProgramming::startTrain(double** xin, int ammInputs, double*
 	AdaptiveGeneticProgramming::size = size;
 	AdaptiveGeneticProgramming::ammInputs = ammInputs;
 
-	AdaptiveGeneticProgramming::x = new double* [size];
-	AdaptiveGeneticProgramming::y = new double[size];
-	for (int i = 0; i < size; i++) {
-		AdaptiveGeneticProgramming::x[i] = new double[ammInputs];
-		for (int j = 0; j < ammInputs; j++) {
-			AdaptiveGeneticProgramming::x[i][j] = xin[i][j];
-		}
-		AdaptiveGeneticProgramming::y[i] = yin[i];
-	}
+
 	
 
 	AdaptiveGeneticProgramming::numIndividuals = numIndividuals;
@@ -221,7 +213,7 @@ void AdaptiveGeneticProgramming::startTrain(double** xin, int ammInputs, double*
 		t.countNodes(nodes);
 
 		arrayIndividuals[i] = t;
-		arrayIndividuals[i].trainWithDE(x, y,size, K1);
+		arrayIndividuals[i].trainWithDE(x,size, K1);
 	}
 
 	findBest();//Первый поиск лучшего индивида
@@ -238,7 +230,7 @@ void AdaptiveGeneticProgramming::startTrain(double** xin, int ammInputs, double*
 			//arrayChildren[j].trainWithDE(x, y, size, K1);
 		}
 
-		threadsFitnessCalc(1);
+		threadsFitnessCalc(x,1);
 		recalcProbabilities();
 
 		forming.replaceGeneration(arrayIndividuals, arrayChildren, numIndividuals);

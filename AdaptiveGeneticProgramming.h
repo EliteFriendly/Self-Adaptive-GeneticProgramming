@@ -9,6 +9,7 @@
 #include "FormingGP.h"
 #include <thread>
 #include <fstream>
+#include <string>
 
 class AdaptiveGeneticProgramming
 {
@@ -22,9 +23,7 @@ private:
 	Tree* arrayChildren = nullptr;
 	double socialCard = 0.1;//Минимальная вероятность выбора
 
-	double** x;//Двойной массив
 	int ammInputs;//Количество осей или входов
-	double* y;
 	int size;//Количество точек
 	int numberFile = 1;//Используется для именовании файла
 
@@ -87,7 +86,7 @@ private:
 
 	Tree createChild(int);
 
-	void threadsFitnessCalc(int ammThread);
+	void threadsFitnessCalc(double** x,int ammThread);
 
 	int findWinner(int* arr, int ammPlayer,double* arrFitness);
 
@@ -144,7 +143,7 @@ public:
 		}
 		crossProbabilities[0] = 0.1;//Ибо там пустой кроссовер
 	}
-	void startTrain(double** x, int ammInputs, double* y, int size, int numIndividuals, int numGeneration);
+	void startTrain(double** x, int ammInputs, int size, int numIndividuals, int numGeneration);
 	Tree getBest() {
 		return bestIndividual;
 	}

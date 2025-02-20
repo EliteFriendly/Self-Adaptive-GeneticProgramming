@@ -27,7 +27,7 @@ void Tree::recountLayers(int level)
 }
 
 
-void Tree::calcFitness(double** x, double* y, int size,double K1)
+void Tree::calcFitness(double** x, int size,double K1)
 {
 	double error = 0;
 
@@ -35,19 +35,30 @@ void Tree::calcFitness(double** x, double* y, int size,double K1)
 
 	int* sizeClust = new int[numCluster];
 	for (int i = 0; i < numCluster; i++) {
-		sizeClust = 0;
+		sizeClust[i] = 0;
 	}
 
 
 	for (int i = 0; i < size; i++) {
-		sizeClust[label[i] - 1]++;
+		sizeClust[label[i] - 1]+=1;
+	}
+	if (sizeClust[0] <= 1 or sizeClust[1] <= 1) {
+		fitness = -999;
+		delete[] sizeClust;
+		return;
 	}
 
 
-	for (int i = 0; i < size; i++) {
-		error += pow(y[i] - getValue(x[i]), 2);
-	}
-	fitness = (1 / (1 + pow(error, 0.5))) * (20 - K1 * numNodes);
+	double a = distanceAverageIn(x, sizeClust, size, 1);
+	a += distanceAverageIn(x, sizeClust, size, 2);
+	a /= 2;
+	double b = distanceAverageOut(x, sizeClust, size);
+
+
+
+	fitness = (b-a)/(max(b,a));
+	if (fitness == 0)
+		fitness += 0.00001;
 	if (fitness == NULL) {
 		cout << "Фитнес равен NAN";
 		exit(0);
@@ -269,33 +280,26 @@ void Tree::changeNode(int search, Tree& newNode)//Отличие от replace в том, что 
 	}
 }
 
-void Tree::trainWithDE(double** x, double* y, int size, double K1)
+void Tree::trainWithDE(double** x, int size, double K1)
 {
 	if (label == nullptr) {
-		label = new int(size);
+		label = new int[size];
+		Tree::size = size;
 	}
 
 
 
-	double **xDE = new double* [size];
-	double* yDE = new double[size];
-	for (int i = 0; i < size; i++) {
-		xDE[i] = new double[ammInputs];
-		for (int j = 0; j < ammInputs; j++) {
-			xDE[i][j] = x[i][j];
-		}
-		yDE[i] = y[i];
-	}
+
 
 	int numVertices = getNumVertices();
 	if (numVertices == 0) {
-		calcFitness(xDE, yDE, size, K1);
+		calcFitness(x, size, K1);
 		return;
 	}
 	function <double(double*)> func = [&](double* input) {
 		int i = 0;
 		changeCoef(input, i);
-		calcFitness(xDE, yDE, size, K1);
+		calcFitness(x, size, K1);
 		return fitness;
 		};
 
@@ -316,29 +320,25 @@ void Tree::trainWithDE(double** x, double* y, int size, double K1)
 	int i = 0;
 	double* coef = DE.getBestCoordinates();
 	changeCoef(coef, i);
-	calcFitness(xDE, yDE, size, K1);
+	calcFitness(x, size, K1);
 
-	delete[] yDE;
 
-	for (int i = 0; i < size; i++) {
-		delete[] xDE[i];
-	}
-	delete[] xDE;
+
 }
 
 
 
 
-double Tree::distanceAverageIn(double** data, int* sizeClust, int str, int col, int cluster) {
+double Tree::distanceAverageIn(double** data, int* sizeClust, int str, int cluster) {
 
 	double sum = 0, dist = 0;
 
 	for (int i = 0; i < str; i++) {
 		for (int j = 0; j < str; j++) {
-			if (label[i] != label[j] or label[i] != cluster)
+			if (label[i] != label[j] or label[i] != cluster or i==j)
 				continue;
 			dist = 0;
-			for (int w = 0; w < col; w++) {
+			for (int w = 0; w < ammInputs; w++) {
 
 				dist += pow(data[i][w] - data[j][w], 2);
 
@@ -351,12 +351,13 @@ double Tree::distanceAverageIn(double** data, int* sizeClust, int str, int col, 
 		}
 	}
 
+
 	sum = (sum / (sizeClust[cluster-1])) / (sizeClust[cluster - 1] - 1);
 
 	return sum;
 
 }
-double Tree::distanceAverageOut(double** data, int* sizeClust, int str, int col) {
+double Tree::distanceAverageOut(double** data, int* sizeClust, int str) {
 
 	double sum = 0, dist = 0;
 
@@ -367,7 +368,7 @@ double Tree::distanceAverageOut(double** data, int* sizeClust, int str, int col)
 				continue;
 
 			dist = 0;
-			for (int w = 0; w < col; w++) {
+			for (int w = 0; w < ammInputs; w++) {
 
 				dist += pow(data[i][w] - data[j][w], 2);
 

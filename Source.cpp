@@ -6,6 +6,8 @@
 #include <fstream>
 #include "AdaptiveGeneticProgramming.h"
 #include <time.h>
+#include <string>
+#include <fstream>
 using namespace std;
 int dimension = 1;
 const double PI = 3.1415926535;
@@ -130,137 +132,83 @@ void qsortRecursive(int* mas, int size) {
 
 
 
-void doResearch(int number, int setRand) {
+void doResearch(int number, int filename) {
 
-	int points = 100;
-	double** x = new double* [points];
-	double* y = new double[points];
-	srand(setRand);
-	mt19937 gen(rand());
-	uniform_real_distribution<> dist(0, 10);
-	ofstream out("Points/Out_"+to_string(number) + ".txt");
+	setlocale(0, "");
+	int str = 200;
+	int col = 2;
 
-	for (int i = 0; i < points; i++) {
-		x[i] = new double[dimension];
-		for (int j = 0; j < dimension; j++)
-			x[i][j] = dist(gen);
-	}
+	ifstream file("Num_"+to_string(number)+".txt");
 
 
-	for (int i = 0; i < points; i++) {
-		y[i] = addNoise(func3(x[i]), 10);
-		for (int j = 0; j < dimension; j++)
-			out << x[i][j] << '\t';
-		out << y[i] << endl;
-	}
+	double** data = new double* [str];
+	double tmp;
 
-
-	//srand(10);
-	//Формирование выборки для обучения
-
-	int i1 = 0;//Счетчики
-	int i2 = 0;
-
-	double** XTrain = new double* [(int(0.8 * points))];
-	double** XTest = new double* [(int(0.2 * points))];
-
-	double* YTrain = new double[(int(0.8 * points))];
-	double* YTest = new double[(int(0.2 * points))];
-
-	for (int i = 0; i < points; i++) {
-		if (i % 5 != 0) {
-			XTrain[i1] = new double[dimension];
-			for (int j = 0; j < dimension; j++)
-				XTrain[i1][j] = x[i][j];
-
-			YTrain[i1] = y[i];
-			i1++;
+	for (int i = 0; i < str; i++) {
+		data[i] = new double[col];
+		for (int j = 0; j < col; j++) {
+			file >> data[i][j];
 		}
-		else {
-			XTest[i2] = new double[dimension];
-			for (int j = 0; j < dimension; j++)
-				XTest[i2][j] = x[i][j];
-
-			YTest[i2] = y[i];
-			i2++;
-		}
+		file >> tmp;
 	}
+	ofstream out("Points/Out_"+to_string(number) + to_string(filename) + ".txt");
+
+	
+
+	AdaptiveGeneticProgramming proba(1, 3);
+	proba.numFile(filename+number*10);
+	proba.startTrain(data, col, str, 20, 20);
 
 
-	ofstream file1("Points/Train_" + to_string(number) + ".txt");
-	ofstream file2("Points/Test_" + to_string(number) + ".txt");
-
-
-	for (int i = 0; i < (int(0.8 * points)); i++) {
-		for (int j = 0; j < dimension; j++)
-			file1 << XTrain[i][j] << '\t';
-		file1 << YTrain[i] << endl;
-	}
-	for (int i = 0; i < (int(0.2 * points)); i++) {
-		for (int j = 0; j < dimension; j++)
-			file2 << XTest[i][j] << '\t';
-		file2 << YTest[i] << endl;
-	}
-
-	AdaptiveGeneticProgramming proba(0.7, 3);
-	proba.numFile(number);
-	proba.startTrain(XTrain, dimension, YTrain, int(0.8*points), 50, 50);
-
-
-	ofstream res("Results/Input_" + to_string(number) + ".txt");
+	ofstream res("Results/Input_" + to_string(number) + to_string(filename) + ".txt");
 
 	res << proba.getBest().getFunc()<<endl;
-	res << proba.getError(XTest, YTest, int(0.2 * points));
+	res << proba.getBest().getFitness() << endl;;
 
-
+	for (int i = 0; i < str; i++) {
+		for (int j = 0; j < col; j++) {
+			out << data[i][j]<<'\t';
+		}
+		out << proba.getBest().getLabel()[i];
+		out << endl;
+	}
 
 	out.close();
 	res.close();
-	file1.close();
-	file2.close();
 
-	for (int i = 0; i < points; i++)
-		delete[] x[i];
-	for (int i = 0; i < int(0.2*points); i++)
-		delete[] XTest[i];
-	for (int i = 0; i < int(0.8 * points); i++)
-		delete[] XTrain[i];
 
-	delete[] x;
-	delete[] XTest;
-	delete[] XTrain;
+	for (int i = 0; i < str; i++)
+		delete[] data[i];
 
-	delete[] y;
-	delete[] YTest;
-	delete[] YTrain;
+	delete[] data;
+
 }
 
 
 
 
 void main() {
-	
-	int str = 5;
-	int col = 1;
 
-	double** X = new double* [str];
-
-	for (int i = 0; i < str; i++) {
-		X[i] = new double[col];
-		X[i][0] = i;
+	for (int i = 0; i < 5; i++) {
+		cout << "Number = " << i<<endl;
+		doResearch(3, i);
 	}
 
-	//cout<<distanceAvereage(X, str, col);
 
 
-
-
-
-
-	//srand(1);
-	////cout << "Номер рандомайзера = " << i<<endl;
+	
+	//srand(3);
 	//AdaptiveGeneticProgramming proba(1.2, 3);
-	//proba.startTrain(x, 1, y, ammount, 10, 10);
-	//cout << proba.getBest().getFunc();
+	//proba.startTrain(data, 2, str, 10, 7);
+	////
+	//// 
+	//// 
+	//for (int i = 0; i < str; i++) {
+	//	cout<<proba.getBest().getLabel()[i]<<endl;
+	//}
+	//for (int i = 0; i < str; i++) {
+	//	delete[] data[i];
+	//}
+	//delete[] data;
 
 }
