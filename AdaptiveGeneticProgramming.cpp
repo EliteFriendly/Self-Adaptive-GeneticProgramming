@@ -2,11 +2,18 @@
 
 void AdaptiveGeneticProgramming::findBest()
 {
-	for (int i = 0; i < numIndividuals; i++) {
-		if (arrayIndividuals[i].getFitness() > bestIndividual.getFitness()) {
-			bestIndividual = arrayIndividuals[i];
-		}
-	}
+    for (int i = 0; i < numIndividuals; i++)
+    {
+        if (arrayIndividuals[i].getFitness() > bestIndividual.getFitness())
+        {
+            bestIndividual = arrayIndividuals[i];
+        }
+    }
+    if (saveTrail) {
+        
+        fileTrail << bestIndividual.getFitness() << endl;
+        
+    }
 }
 
 void AdaptiveGeneticProgramming::setSelectionsArrays()
@@ -25,7 +32,7 @@ Tree AdaptiveGeneticProgramming::createChild(int numInd)
 
 	chosenSel[numInd] = probabilityChoice(selProbabilities, 5);
 
-	//cout << "Íîìåð ãåíåðàöèè = " << i <<", Íîìåð èíäèâèäà = " << j << endl;
+	//cout << "ÐÐ¾Ð¼ÐµÑ€ Ð³ÐµÐ½ÐµÑ€Ð°Ñ†Ð¸Ð¸ = " << i <<", ÐÐ¾Ð¼ÐµÑ€ Ð¸Ð½Ð´Ð¸Ð²Ð¸Ð´Ð° = " << j << endl;
 	int numParent1 = selection[chosenSel[numInd]]->getNumParents();
 	int numParent2 = selection[chosenSel[numInd]]->getNumParents();
 	while (numParent1 == numParent2) {
@@ -48,53 +55,44 @@ void AdaptiveGeneticProgramming::threadsFitnessCalc(double**x,int ammThread)
 	if (ammThread == 1) {
 
 		for (int i = 0; i < numIndividuals; i++) {
-			arrayChildren[i].trainWithDE(x,  size, K1);
+			cout<<"Individual = "<<i<<endl;
+			arrayChildren[i].trainWithDE(x , size , K1);
 		}
 		return;
 	}
 	
-	thread* thr = new thread[ammThread - 1];
-	int usesThr;
-
-	int t = numIndividuals / 2;
-
-	//Tree* tmpArray = new Tree[t];
-
-	//for (int i = 0; i < t; i++) {
-	//	tmpArray[i] = arrayChildren[i];
-	//}
 
 
-	thr[0] = thread([&]() {
-		for (int i = 0; i < t; i++) {
-			arrayChildren[i].trainWithDE(x,  size, K1);
-		}
-		});
-	for (int i = t; i < numIndividuals; i++) {
-		arrayChildren[i].trainWithDE(x,  size, K1);
-	}
+
 	
-	thr[0].join();
 
-	//for (int i = 0; i < t; i++) {
-	//	arrayChildren[i] = tmpArray[i];
-	//}
-	//for (int i = 0; i < numIndividuals; i++) {
-	//	usesThr = 0;
-	//	while (usesThr < (ammThread - 1)) {
-	//		thr[usesThr] = thread([&]() {arrayChildren[i].trainWithDE(x, y, size, K1); });
-	//		usesThr++;
-	//		i++;
-	//	}
-	//	usesThr = 0;
-	//	//arrayChildren[i].trainWithDE(x, y, size, K1);
-	//	while (usesThr < (ammThread - 1)) {
-	//		thr[usesThr].join();
-	//		usesThr++;
-	//	}
-	//}
-	delete[]thr;
+    std::vector<std::thread> workers;
+    std::atomic<int> nextIndex{0}; // ÐÑ‚Ð¾Ð¼Ð°Ñ€Ð½Ñ‹Ð¹ ÑÑ‡ÐµÑ‚Ñ‡Ð¸Ðº Ð´Ð»Ñ Ñ€Ð°ÑÐ¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ñ Ð·Ð°Ð´Ð°Ñ‡
 
+    auto worker_func = [&](int threadId) {
+        while (true)
+        {
+            int idx = nextIndex.fetch_add(1); // ÐÑ‚Ð¾Ð¼Ð°Ñ€Ð½Ð¾ Ð¿Ð¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰Ð¸Ð¹ Ð¸Ð½Ð´ÐµÐºÑ
+            if (idx >= numIndividuals)
+                break;
+
+            // std::cout << "Worker #" << threadId << ": Processing individual #" << idx << std::endl;
+            arrayChildren[idx].trainWithDE(x, size, K1);
+        }
+    };
+
+    // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð¿Ð¾Ñ‚Ð¾ÐºÐ¸
+    for (int i = 0; i < ammThread; ++i)
+    {
+        workers.emplace_back(worker_func, i);
+    }
+
+    // ÐžÐ¶Ð¸Ð´Ð°Ð½Ð¸Ðµ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ñ Ð²ÑÐµÑ… Ð¿Ð¾Ñ‚Ð¾ÐºÐ¾Ð²
+    for (auto &w : workers)
+    {
+        if (w.joinable())
+            w.join();
+    }
 }
 
 int AdaptiveGeneticProgramming::findWinner(int* arrPlayers, int ammPlayer,double* arrFitness)
@@ -161,15 +159,15 @@ void AdaptiveGeneticProgramming::recalcProbabilities()
 		sumFitness += arrFitness[i];
 	}
 	int winner;
-	//Ñåëåêöèÿ
+	//Ð¡ÐµÐ»ÐµÐºÑ†Ð¸Ñ
 	winner = findWinner(chosenSel, 5, arrFitness);
 	changeProbabilities(selProbabilities, winner, 5);
 
-	//Êðîññîâåð
+	//ÐšÑ€Ð¾ÑÑÐ¾Ð²ÐµÑ€
 	winner = findWinner(chosenCross, 4, arrFitness);
 	changeProbabilities(crossProbabilities, winner, 4);
 
-	//Ìóòàöèÿ
+	//ÐœÑƒÑ‚Ð°Ñ†Ð¸Ñ
 	winner = findWinner(chosenMut, 4, arrFitness);
 	changeProbabilities(mutProbabilities, winner, 4);
 
@@ -180,10 +178,10 @@ void AdaptiveGeneticProgramming::recalcProbabilities()
 void AdaptiveGeneticProgramming::startTrain(double** x, int ammInputs, int size, int numIndividuals, int numGeneration)
 {
 
-	fSel.open("Probabilities/ProbabilSel_" + to_string(numberFile)+".txt");
+	fSel.open("Probabilities/ProbabilSel_" + markFile+".txt");
 
-	fCross.open("Probabilities/ProbabilCross_" + to_string(numberFile) + ".txt");
-	fMut.open("Probabilities/ProbabilMut_" + to_string(numberFile) + ".txt");
+	fCross.open("Probabilities/ProbabilCross_" + markFile + ".txt");
+	fMut.open("Probabilities/ProbabilMut_" + markFile + ".txt");
 
 	saveProbabilities();
 
@@ -204,10 +202,10 @@ void AdaptiveGeneticProgramming::startTrain(double** x, int ammInputs, int size,
 
 
 
-	//Ïåðâàÿ èíèöèëèçàöèÿ ïîêîëåíèÿ
+	//ÐŸÐµÑ€Ð²Ð°Ñ Ð¸Ð½Ð¸Ñ†Ð¸Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð¿Ð¾ÐºÐ¾Ð»ÐµÐ½Ð¸Ñ
 	for (int i = 0; i < numIndividuals; i++) {
-		Tree t(treeDepth-1,ammInputs);
-		//Ïîäñ÷åò óçëîâ è óðîâíåé
+		Tree t(treeDepth-1,ammInputs,aim);
+		//ÐŸÐ¾Ð´ÑÑ‡ÐµÑ‚ ÑƒÐ·Ð»Ð¾Ð² Ð¸ ÑƒÑ€Ð¾Ð²Ð½ÐµÐ¹
 		int nodes = 0, lvl = 0;
 		t.recountLayers(lvl);
 		t.countNodes(nodes);
@@ -216,21 +214,21 @@ void AdaptiveGeneticProgramming::startTrain(double** x, int ammInputs, int size,
 		arrayIndividuals[i].trainWithDE(x,size, K1);
 	}
 
-	findBest();//Ïåðâûé ïîèñê ëó÷øåãî èíäèâèäà
-	//Îñíîâíîå íà÷àëî àëãîðèòìà
+	findBest();//ÐŸÐµÑ€Ð²Ñ‹Ð¹ Ð¿Ð¾Ð¸ÑÐº Ð»ÑƒÑ‡ÑˆÐµÐ³Ð¾ Ð¸Ð½Ð´Ð¸Ð²Ð¸Ð´Ð°
+	//ÐžÑÐ½Ð¾Ð²Ð½Ð¾Ðµ Ð½Ð°Ñ‡Ð°Ð»Ð¾ Ð°Ð»Ð³Ð¾Ñ€Ð¸Ñ‚Ð¼Ð°
 	int numParent1, numParent2;
 
 	for (int i = 0; i < numGeneration; i++) {
-		cout << "Íîìåð ãåíåðàöèè = " << i << endl;
+		cout << "Generation = " << i << endl;
 		setSelectionsArrays();
 		for (int j = 0; j < numIndividuals; j++) {
-			//cout << "Íîìåð ãåíåðàöèè = " << i <<", Íîìåð èíäèâèäà = " << j << endl;
+			//cout << "ÐÐ¾Ð¼ÐµÑ€ Ð³ÐµÐ½ÐµÑ€Ð°Ñ†Ð¸Ð¸ = " << i <<", ÐÐ¾Ð¼ÐµÑ€ Ð¸Ð½Ð´Ð¸Ð²Ð¸Ð´Ð° = " << j << endl;
 		
 			arrayChildren[j] = createChild(j);
 			//arrayChildren[j].trainWithDE(x, y, size, K1);
 		}
 
-		threadsFitnessCalc(x,1);
+		threadsFitnessCalc(x,12);
 		recalcProbabilities();
 
 		forming.replaceGeneration(arrayIndividuals, arrayChildren, numIndividuals);

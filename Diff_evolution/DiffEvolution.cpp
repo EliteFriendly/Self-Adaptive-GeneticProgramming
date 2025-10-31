@@ -4,12 +4,12 @@
 IndividualDiffEvolution DiffEvolution::crossover(IndividualDiffEvolution donor)
 {
 	
-	int ammount=0;//Количество раз когда поменялся вектор
-	int number = rand() % N;//Номер родителя
-	double rep;//Вероятность поменять координаты
+	int ammount=0;//РљРѕР»РёС‡РµСЃС‚РІРѕ СЂР°Р· РєРѕРіРґР° РїРѕРјРµРЅСЏР»СЃСЏ РІРµРєС‚РѕСЂ
+	int number = rand() % N;//РќРѕРјРµСЂ СЂРѕРґРёС‚РµР»СЏ
+	double rep;//Р’РµСЂРѕСЏС‚РЅРѕСЃС‚СЊ РїРѕРјРµРЅСЏС‚СЊ РєРѕРѕСЂРґРёРЅР°С‚С‹
 	double* coordinates = donor.getCoordinats();
 
-	//Процесс изменения гена
+	//РџСЂРѕС†РµСЃСЃ РёР·РјРµРЅРµРЅРёСЏ РіРµРЅР°
 	for (int i = 0; i < ammDimens; i++) {
 		rep = rand() % 1000 / 1000.0;
 		if (rep < Cr) {
@@ -17,7 +17,7 @@ IndividualDiffEvolution DiffEvolution::crossover(IndividualDiffEvolution donor)
 			ammount++;
 		}
 	}
-	if (ammount == 0) {//В случае если ген ни разу не поменялся
+	if (ammount == 0) {//Р’ СЃР»СѓС‡Р°Рµ РµСЃР»Рё РіРµРЅ РЅРё СЂР°Р·Сѓ РЅРµ РїРѕРјРµРЅСЏР»СЃСЏ
 		int ran = rand() % ammDimens;
 		coordinates[ran] = arrIndividuals[number].getCoordinats()[ran];
 	}
@@ -49,11 +49,11 @@ void DiffEvolution::startSearch(double acc, double F, double Cr, int N, int gene
 	DiffEvolution::Cr = Cr;
 	DiffEvolution::N = N;
 	DiffEvolution::generations = generations;
-	mutation.setF(F);//Установака для корректной работы мутации
+	mutation.setF(F);//РЈСЃС‚Р°РЅРѕРІР°РєР° РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕР№ СЂР°Р±РѕС‚С‹ РјСѓС‚Р°С†РёРё
 
 	arrIndividuals = new IndividualDiffEvolution[N];
 
-	//Генерация первой популяции
+	//Р“РµРЅРµСЂР°С†РёСЏ РїРµСЂРІРѕР№ РїРѕРїСѓР»СЏС†РёРё
 	for (int i = 0; i < N; i++) {
 		IndividualDiffEvolution ind(limitsDimension, func, ammDimens, acc, aim);
 		arrIndividuals[i] = ind;
@@ -62,17 +62,16 @@ void DiffEvolution::startSearch(double acc, double F, double Cr, int N, int gene
 	
 	saveBest();
 
-	//Начало работы основной части программы
+	//РќР°С‡Р°Р»Рѕ СЂР°Р±РѕС‚С‹ РѕСЃРЅРѕРІРЅРѕР№ С‡Р°СЃС‚Рё РїСЂРѕРіСЂР°РјРјС‹
 	IndividualDiffEvolution newInd;
 	for (int i = 0; i < generations; i++)
 	{
 		for (int j = 0; j < N; j++) {
-			//cout << "Номер генерации = " << i << ", Номер индивида = " << j << endl;
+			//cout << "РќРѕРјРµСЂ РіРµРЅРµСЂР°С†РёРё = " << i << ", РќРѕРјРµСЂ РёРЅРґРёРІРёРґР° = " << j << endl;
 			newInd = mutation.getDonor(arrIndividuals,best,N);
 			newInd = crossover(newInd);
 			newInd.calcFitness();
 			surviveCrossover(newInd);
-			newInd.~IndividualDiffEvolution();
 		}
 		saveBest();
 	}

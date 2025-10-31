@@ -10,29 +10,37 @@
 #include <thread>
 #include <fstream>
 #include <string>
+#include <atomic>
+#include <condition_variable>
+#include <fstream>
+#include <functional>
+#include <mutex>
 
 class AdaptiveGeneticProgramming
 {
 private:
-	double K1;//Коэффициент используемый для подсчета пригодности, чем выше тем меньше будут деревья
+	double K1;//РљРѕСЌС„С„РёС†РёРµРЅС‚ РёСЃРїРѕР»СЊР·СѓРµРјС‹Р№ РґР»СЏ РїРѕРґСЃС‡РµС‚Р° РїСЂРёРіРѕРґРЅРѕСЃС‚Рё, С‡РµРј РІС‹С€Рµ С‚РµРј РјРµРЅСЊС€Рµ Р±СѓРґСѓС‚ РґРµСЂРµРІСЊСЏ
 	int treeDepth;
 	Tree bestIndividual;
 	int numIndividuals;
 	int numGeneration;
 	Tree* arrayIndividuals = nullptr;
 	Tree* arrayChildren = nullptr;
-	double socialCard = 0.1;//Минимальная вероятность выбора
+	double socialCard = 0.1;//РњРёРЅРёРјР°Р»СЊРЅР°СЏ РІРµСЂРѕСЏС‚РЅРѕСЃС‚СЊ РІС‹Р±РѕСЂР°
 
-	int ammInputs;//Количество осей или входов
-	int size;//Количество точек
-	int numberFile = 1;//Используется для именовании файла
+	string aim = "reg";
+	int ammInputs;//РљРѕР»РёС‡РµСЃС‚РІРѕ РѕСЃРµР№ РёР»Рё РІС…РѕРґРѕРІ
+	int size;//РљРѕР»РёС‡РµСЃС‚РІРѕ С‚РѕС‡РµРє
+    string markFile = "1";                      // РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ РёРјРµРЅРѕРІР°РЅРёРё С„Р°Р№Р»Р°
+    bool saveTrail = false; // РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РІ РјРѕРјРµРЅС‚ РїРѕРёСЃРєР° Р»СѓС‡С€РµРіРѕ РёРЅРґРёРІРёРґР°
+    ofstream fileTrail; // РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РІ РјРѕРјРµРЅС‚ РїРѕРёСЃРєР° Р»СѓС‡С€РµРіРѕ РёРЅРґРёРІРёРґР°
 
 	int ammSel = 5;
 	SelectionGP** selection = nullptr;
 	/*
-	0-ранговая
-	1-пропорциональная
-	2-4 турнирная(3,5,10)
+	0-СЂР°РЅРіРѕРІР°СЏ
+	1-РїСЂРѕРїРѕСЂС†РёРѕРЅР°Р»СЊРЅР°СЏ
+	2-4 С‚СѓСЂРЅРёСЂРЅР°СЏ(3,5,10)
 	*/
 	double* selProbabilities = nullptr;
 	int* chosenSel = nullptr;
@@ -41,10 +49,10 @@ private:
 	int ammCross = 4;
 	CrossoverGP** crossover = nullptr;
 	/*
-	0-пустое
-	1-стандарт
-	2-одноточечное
-	3-равномерное
+	0-РїСѓСЃС‚РѕРµ
+	1-СЃС‚Р°РЅРґР°СЂС‚
+	2-РѕРґРЅРѕС‚РѕС‡РµС‡РЅРѕРµ
+	3-СЂР°РІРЅРѕРјРµСЂРЅРѕРµ
 	*/
 	double* crossProbabilities = nullptr;
 	int* chosenCross = nullptr;
@@ -53,10 +61,10 @@ private:
 	int ammMut = 4;
 	MutationGP** mutation = nullptr;
 	/*
-	0-дерево
-	1-слабая
-	2-средняя
-	3-сильная
+	0-РґРµСЂРµРІРѕ
+	1-СЃР»Р°Р±Р°СЏ
+	2-СЃСЂРµРґРЅСЏСЏ
+	3-СЃРёР»СЊРЅР°СЏ
 	*/
 	double* mutProbabilities = nullptr;
 	int* chosenMut = nullptr;
@@ -108,7 +116,7 @@ private:
 	}
 
 public:
-	AdaptiveGeneticProgramming(double K1, int treeDepth) :K1(K1), treeDepth(treeDepth){
+	AdaptiveGeneticProgramming(double K1, int treeDepth, string aim = "reg") :K1(K1), treeDepth(treeDepth){
 		
 		selection = new SelectionGP*[5];
 		selection[0] = new RankedSelection;
@@ -129,6 +137,7 @@ public:
 		mutation[2] = new PointMutation("Average");
 		mutation[3] = new PointMutation("Strong");
 
+		this->aim = aim;
 
 		selProbabilities = new double[5];
 		crossProbabilities = new double[4];
@@ -141,14 +150,14 @@ public:
 			crossProbabilities[i] = 0.3;
 			mutProbabilities[i] = 1.0 / 4;
 		}
-		crossProbabilities[0] = 0.1;//Ибо там пустой кроссовер
+		crossProbabilities[0] = 0.1;//РР±Рѕ С‚Р°Рј РїСѓСЃС‚РѕР№ РєСЂРѕСЃСЃРѕРІРµСЂ
 	}
 	void startTrain(double** x, int ammInputs, int size, int numIndividuals, int numGeneration);
 	Tree getBest() {
 		return bestIndividual;
 	}
 	double getError(double** x, double *y, int size) {
-		double sum = 0;//Среднеквадратичная ошибка
+		double sum = 0;//РЎСЂРµРґРЅРµРєРІР°РґСЂР°С‚РёС‡РЅР°СЏ РѕС€РёР±РєР°
 		for (int i = 0; i < size; i++) {
 			sum += pow(bestIndividual.getValue(x[i]) - y[i], 2);
 		}
@@ -157,9 +166,16 @@ public:
 
 	}
 
-	void numFile(int num) {
-		numberFile = num;
-	}
+    void numFileAndTrail(string special, bool saveTrail = false)
+    {
+        markFile = special;
+        AdaptiveGeneticProgramming::saveTrail = saveTrail;
+        fileTrail.open("algorithm_results/trail/" + markFile + ".txt");
+        if (!fileTrail.is_open())
+        {
+            throw "Error: can't open file for trail";
+        }
+    }
 
 	~AdaptiveGeneticProgramming() {
 		if (arrayIndividuals != nullptr) {

@@ -14,16 +14,16 @@ class DiffEvolution
 {
 private:
 	function<double(double*)> func;
-	double* limitsDimension;//Ограничения каждой оси
-	double F;//Масштабирующий фактор
-	double Cr;//Вероятность скрещивания
-	int N;//Количество индивидов
-	int generations;//Количество поколений
-	IndividualDiffEvolution* arrIndividuals;//Вектор содержащий целевые вектора
-	IndividualDiffEvolution best;//Лучшее найденное решение
+	double *limitsDimension = nullptr; // РћРіСЂР°РЅРёС‡РµРЅРёСЏ РєР°Р¶РґРѕР№ РѕСЃРё
+	double F;//РњР°СЃС€С‚Р°Р±РёСЂСѓСЋС‰РёР№ С„Р°РєС‚РѕСЂ
+	double Cr;//Р’РµСЂРѕСЏС‚РЅРѕСЃС‚СЊ СЃРєСЂРµС‰РёРІР°РЅРёСЏ
+	int N;//РљРѕР»РёС‡РµСЃС‚РІРѕ РёРЅРґРёРІРёРґРѕРІ
+	int generations;//РљРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРєРѕР»РµРЅРёР№
+	IndividualDiffEvolution* arrIndividuals;//Р’РµРєС‚РѕСЂ СЃРѕРґРµСЂР¶Р°С‰РёР№ С†РµР»РµРІС‹Рµ РІРµРєС‚РѕСЂР°
+	IndividualDiffEvolution best;//Р›СѓС‡С€РµРµ РЅР°Р№РґРµРЅРЅРѕРµ СЂРµС€РµРЅРёРµ
 	DiffMutation mutation;
-	string aim;//Цель задачи
-	int ammDimens;//Количество измерений(осей)
+	string aim;//Р¦РµР»СЊ Р·Р°РґР°С‡Рё
+	int ammDimens;//РљРѕР»РёС‡РµСЃС‚РІРѕ РёР·РјРµСЂРµРЅРёР№(РѕСЃРµР№)
 
 	IndividualDiffEvolution crossover(IndividualDiffEvolution);
 	void surviveCrossover(IndividualDiffEvolution);

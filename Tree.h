@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "Diff_evolution/DiffEvolution.h"
+#include <math.h>
 
 
 
@@ -11,43 +12,44 @@ using namespace std;
 class Tree
 {
 private:
+
+	string aim = "reg";
+	int numberFunc;//РќРѕРјРµСЂ С„СѓРЅРєС†РёРё РєРѕС‚РѕСЂС‹Р№ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ СѓР·Р»Рµ
+	int numVertices = 0;//РљРѕР»РёС‡РµСЃС‚РІРѕ РІРµСЂС€РёРЅ
+	int numNodes;//РљРѕР»РёС‡РµСЃС‚РІРѕ СѓР·Р»РѕРІ РЅРёР¶Рµ
+	int layerLevel;//РќР° РєР°РєРѕРј СѓСЂРѕРІРЅРµ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РЅР°С‡Р°Р»Р° РЅР°С…РѕРґРёС‚СЃСЏ СѓР·РµР»
+	int numCluster = 2;//РљРѕР»РёС‡РµСЃС‚РІРѕ РєР»Р°СЃС‚РµСЂРѕРІ
+	int size;//РљРѕР»РёС‡РµСЃС‚РІРѕ РґР°РЅРЅС‹С…
+
+	double coef = 0;//РљРѕСЌС„С„РёС†РёРµРЅС‚ РІ РІРµСЂС€РёРЅР°С…
+	int numInput = 0;//РќРѕРјРµСЂ РІС…РѕРґР°
+	int ammInputs;//РљРѕР»РёС‡РµСЃС‚РІРѕ РІС…РѕРґРѕРІ
+
+	double fitness=-9999999;//РќСѓ С‚СѓС‚ РїРѕРЅСЏС‚РЅРѕ
+
+	bool unarFuncUs = false;//РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ Р»Рё СѓРЅР°СЂРЅР°СЏ С„СѓРЅРєС†РёСЏ true/false
+	bool lastVertice = false;//РўРµСЂРјР°Р»СЊРЅРѕРµ Р»Рё РјРЅРѕР¶РµСЃС‚РІРѕ
 	
-	int numberFunc;//Номер функции который используется в узле
-	int numVertices = 0;//Количество вершин
-	int numNodes;//Количество узлов ниже
-	int layerLevel;//На каком уровне относительно начала находится узел
-	int numCluster = 2;//Количество кластеров
-	int size;//Количество данных
-
-	double coef = NULL;//Коэффициент в вершинах
-	int numInput = NULL;//Номер входа
-	int ammInputs;//Количество входов
-
-	double fitness=-9999999;//Ну тут понятно
-
-	bool unarFuncUs = false;//Используется ли унарная функция true/false
-	bool lastVertice = false;//Термальное ли множество
-	
-	int* label = nullptr;//Размеченные данные
+	int* label = nullptr;//Р Р°Р·РјРµС‡РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ
 	Tree* left = nullptr;
 	Tree* right = nullptr;
 
 
-	vector<string> strUnarFunc = { "x","sin","cos","ln","exp" };//Символьный вывод функции
-	vector<string> strBinaryFunc = { "+","-","*","/" };//Символьный вывод функции
+	vector<string> strUnarFunc = { "x","sin","cos","ln","exp" };//РЎРёРјРІРѕР»СЊРЅС‹Р№ РІС‹РІРѕРґ С„СѓРЅРєС†РёРё
+	vector<string> strBinaryFunc = { "+","-","*","/" };//РЎРёРјРІРѕР»СЊРЅС‹Р№ РІС‹РІРѕРґ С„СѓРЅРєС†РёРё
 	vector<function <double(double)>> unarFunc = {
 		[](double x) {return sin(x); },
 		[](double x) {return cos(x); },
 		[](double x) {if (x == 0) return 100000.0; return log(abs(x)); },
 		[](double x) {if (x >= 10) return exp(10); if (x <= -10) return(0.0); return exp(x); }
 
-	};//Выборка из унарных функций
+	};//Р’С‹Р±РѕСЂРєР° РёР· СѓРЅР°СЂРЅС‹С… С„СѓРЅРєС†РёР№
 	vector<function <double(double, double)>> binaryFunc = {
 		[](double x,double y) {return x + y; },
 		[](double x,double y) {return x - y; },
 		[](double x,double y) {return x * y; },
 		[](double x,double y) {if (y == 0) return 1.0; return x / y; }
-	};//Выборка из бинарных функций
+	};//Р’С‹Р±РѕСЂРєР° РёР· Р±РёРЅР°СЂРЅС‹С… С„СѓРЅРєС†РёР№
 
 
 	double distanceAverageIn(double** data, int* label, int str, int cluster);
@@ -58,7 +60,7 @@ public:
 	Tree() {}
 	Tree(const Tree &copy) :numberFunc(copy.numberFunc), lastVertice(copy.lastVertice),
 		unarFuncUs(copy.unarFuncUs), coef(copy.coef),numVertices(copy.numVertices),numNodes(copy.numNodes),fitness(copy.fitness),
-		layerLevel(copy.layerLevel), numInput(copy.numInput), ammInputs(copy.ammInputs), numCluster(copy.numCluster)
+		layerLevel(copy.layerLevel), numInput(copy.numInput), ammInputs(copy.ammInputs), numCluster(copy.numCluster), aim(copy.aim) 
 	{
 
 		if (copy.label != nullptr) {
@@ -75,7 +77,7 @@ public:
 
 		/*this->operator=(copy);
 		cout << 1;*/
-		//Выделение памяти чтобы не было кучи взаимосвязанных индивидлв
+		//Р’С‹РґРµР»РµРЅРёРµ РїР°РјСЏС‚Рё С‡С‚РѕР±С‹ РЅРµ Р±С‹Р»Рѕ РєСѓС‡Рё РІР·Р°РёРјРѕСЃРІСЏР·Р°РЅРЅС‹С… РёРЅРґРёРІРёРґР»РІ
 		if (copy.left != nullptr) {
 			if (left != nullptr) {
 				delete left;
@@ -108,7 +110,7 @@ public:
 	double getFitness() {
 		return fitness;
 	}
-	Tree(int d,int numInputs);
+	Tree(int d,int numInputs, string aim);
 	string getFunc();
 	int* getLabel() {
 		return label;
@@ -137,7 +139,11 @@ public:
 	int getAmmInputs() {
 		return ammInputs;
 	}
-	~Tree() {
+	string getAim() {
+		return aim;
+	}
+	~Tree()
+	{
 		if (label != nullptr) {
 			delete[] label;
 			label = nullptr;
@@ -159,9 +165,9 @@ public:
 
 
 
-	void randFunc() {//Используется для оператора мутации
+	void randFunc() {//РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ РѕРїРµСЂР°С‚РѕСЂР° РјСѓС‚Р°С†РёРё
 		if (lastVertice) {
-			int r = rand() % (ammInputs + 1);//Считается с коэф
+			int r = rand() % (ammInputs + 1);//РЎС‡РёС‚Р°РµС‚СЃСЏ СЃ РєРѕСЌС„
 			if (r == 0) {
 				numVertices = 1;
 			}
@@ -213,7 +219,7 @@ public:
 
 
 		numCluster = copy.numCluster;
-
+		aim = copy.aim;
 		numberFunc = copy.numberFunc;
 		layerLevel = copy.layerLevel;
 		lastVertice = copy.lastVertice; 
@@ -224,7 +230,7 @@ public:
 		numNodes = copy.numNodes;
 		fitness = copy.fitness;
 		ammInputs = copy.ammInputs;
-		//Выделение памяти чтобы не было кучи взаимосвязанных индивидлв
+		//Р’С‹РґРµР»РµРЅРёРµ РїР°РјСЏС‚Рё С‡С‚РѕР±С‹ РЅРµ Р±С‹Р»Рѕ РєСѓС‡Рё РІР·Р°РёРјРѕСЃРІСЏР·Р°РЅРЅС‹С… РёРЅРґРёРІРёРґР»РІ
 		if (copy.left != nullptr) {
 			if (left != nullptr) {
 				delete left;

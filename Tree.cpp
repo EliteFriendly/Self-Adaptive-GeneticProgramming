@@ -27,49 +27,67 @@ void Tree::recountLayers(int level)
 }
 
 
-void Tree::calcFitness(double** x, int size,double K1)
+void Tree::calcFitness(double** x, int size, double K1)
 {
 	double error = 0;
+	if (aim == "clust") {
+		clustering(x, size);
 
-	clustering(x, size);
-
-	int* sizeClust = new int[numCluster];
-	for (int i = 0; i < numCluster; i++) {
-		sizeClust[i] = 0;
-	}
+		int* sizeClust = new int[numCluster];
+		for (int i = 0; i < numCluster; i++) {
+			sizeClust[i] = 0;
+		}
 
 
-	for (int i = 0; i < size; i++) {
-		sizeClust[label[i] - 1]+=1;
-	}
-	if (sizeClust[0] <= 1 or sizeClust[1] <= 1) {
-		fitness = -999;
+		for (int i = 0; i < size; i++) {
+			sizeClust[label[i] - 1]+=1;
+		}
+		if (sizeClust[0] <= 1 or sizeClust[1] <= 1) {
+			fitness = -999;
+			delete[] sizeClust;
+			return;
+		}
+
+
+		double a = distanceAverageIn(x, sizeClust, size, 1);
+		a += distanceAverageIn(x, sizeClust, size, 2);
+		a /= 2;
+		double b = distanceAverageOut(x, sizeClust, size);
+
+
+
+		fitness = (b-a)/(max(b,a));
+		if (fitness == 0)
+			fitness += 0.00001;
 		delete[] sizeClust;
-		return;
 	}
-
-
-	double a = distanceAverageIn(x, sizeClust, size, 1);
-	a += distanceAverageIn(x, sizeClust, size, 2);
-	a /= 2;
-	double b = distanceAverageOut(x, sizeClust, size);
-
-
-
-	fitness = (b-a)/(max(b,a));
-	if (fitness == 0)
-		fitness += 0.00001;
-	if (fitness == NULL) {
-		cout << "Фитнес равен NAN";
+	if (aim == "reg") {
+		for (int i = 0; i < size; i++) {
+			
+			error += pow(x[i][ammInputs] - getValue(x[i]), 2);
+		}
+		error /= size;
+		if (isnan(error)) {
+			fitness = 0;
+			return;
+		}
+		else {
+			fitness = (1 / (1 + pow(error , 0.5))); //* (20 - K1 * numNodes);
+		}
+		
+	}
+	if (fitness < 0) {
+		cout << "Р¤РёС‚РЅРµСЃ СЂР°РІРµРЅ NAN";
 		exit(0);
 	}
-	delete[] sizeClust;
+
 }
 
-Tree::Tree(int d, int numInputs)
+Tree::Tree(int d, int numInputs, string aim)
 {
+	this->aim = aim;
 	ammInputs = numInputs;
-	//Случай если дошли до самого конца
+	//РЎР»СѓС‡Р°Р№ РµСЃР»Рё РґРѕС€Р»Рё РґРѕ СЃР°РјРѕРіРѕ РєРѕРЅС†Р°
 	if (d == 0) {
 		lastVertice = true;
 		if (rand() % (numInputs+1)) {
@@ -87,21 +105,21 @@ Tree::Tree(int d, int numInputs)
 	
 	
 	if (r) {
-		//В случае если унарная
+		//Р’ СЃР»СѓС‡Р°Рµ РµСЃР»Рё СѓРЅР°СЂРЅР°СЏ
 		unarFuncUs = true;
 		
 		numberFunc = rand() % (unarFunc.size());
 		//Tree a(d - 1);
-		right = new Tree(d-1,numInputs);
+		right = new Tree(d-1,numInputs, aim);
 	}
 	else {
-		//В случае если бинарная
+		//Р’ СЃР»СѓС‡Р°Рµ РµСЃР»Рё Р±РёРЅР°СЂРЅР°СЏ
 		unarFuncUs = false;
 		numberFunc = rand() % (binaryFunc.size());
 		//Tree l(d - 1);
 		//Tree r(d - 1);
-		left = new Tree(d - 1,numInputs);
-		right = new Tree(d - 1,numInputs);
+		left = new Tree(d - 1,numInputs, aim);
+		right = new Tree(d - 1,numInputs, aim);
 	}
 }
 
@@ -152,16 +170,16 @@ string Tree::getFunc()
 
 void Tree::changeCoef(double *in,int &z)
 {
-	//Заполнение будет происходить слева направо
-	if (left != nullptr) {//Идем сначала по левой стороне до конца
+	//Р—Р°РїРѕР»РЅРµРЅРёРµ Р±СѓРґРµС‚ РїСЂРѕРёСЃС…РѕРґРёС‚СЊ СЃР»РµРІР° РЅР°РїСЂР°РІРѕ
+	if (left != nullptr) {//РРґРµРј СЃРЅР°С‡Р°Р»Р° РїРѕ Р»РµРІРѕР№ СЃС‚РѕСЂРѕРЅРµ РґРѕ РєРѕРЅС†Р°
 		left->changeCoef(in, z);
 	}
-	if (right != nullptr) {//Если нет ничего слева
+	if (right != nullptr) {//Р•СЃР»Рё РЅРµС‚ РЅРёС‡РµРіРѕ СЃР»РµРІР°
 		right->changeCoef(in, z);
 	}
 	if (lastVertice and numVertices == 1) {
-		coef = in[z];//Замена коэффициентов в случае если все ок
-		z++;//Работа с памятью!!!
+		coef = in[z];//Р—Р°РјРµРЅР° РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ РІ СЃР»СѓС‡Р°Рµ РµСЃР»Рё РІСЃРµ РѕРє
+		z++;//Р Р°Р±РѕС‚Р° СЃ РїР°РјСЏС‚СЊСЋ!!!
 	}
 }
 
@@ -189,12 +207,12 @@ double Tree::getNumVertices()
 
 double Tree::getValue(double* x)
 {
-	//if (right != nullptr and left ==nullptr) {//Если справа что то есть то это точно унарная функци
+	//if (right != nullptr and left ==nullptr) {//Р•СЃР»Рё СЃРїСЂР°РІР° С‡С‚Рѕ С‚Рѕ РµСЃС‚СЊ С‚Рѕ СЌС‚Рѕ С‚РѕС‡РЅРѕ СѓРЅР°СЂРЅР°СЏ С„СѓРЅРєС†Рё
 
 	//	return unarFunc[numberFunc](right->getValue(x));
 	//	
 	//}
-	if (lastVertice) {//Если дошли до вершины
+	if (lastVertice) {//Р•СЃР»Рё РґРѕС€Р»Рё РґРѕ РІРµСЂС€РёРЅС‹
 		if (numVertices==1) {
 			return coef;
 		}
@@ -202,7 +220,7 @@ double Tree::getValue(double* x)
 			return x[numInput];
 		}
 		else {
-			cout << "Непредвиденность в getValue";
+			cout << "РќРµРїСЂРµРґРІРёРґРµРЅРЅРѕСЃС‚СЊ РІ getValue";
 			exit(0);
 		}
 	}
@@ -210,19 +228,19 @@ double Tree::getValue(double* x)
 	if (unarFuncUs) {
 		return unarFunc[numberFunc](right->getValue(x));
 	}
-	else {//Если попались в бинарную функцию
+	else {//Р•СЃР»Рё РїРѕРїР°Р»РёСЃСЊ РІ Р±РёРЅР°СЂРЅСѓСЋ С„СѓРЅРєС†РёСЋ
 		return binaryFunc[numberFunc](left->getValue(x),right->getValue(x));
 	}
 	
 }
 
-void Tree::replaceNode(int search, Tree& newNode)//Замена выбранного узла
+void Tree::replaceNode(int search, Tree& newNode)//Р—Р°РјРµРЅР° РІС‹Р±СЂР°РЅРЅРѕРіРѕ СѓР·Р»Р°
 {
-	if (numNodes == search) {//Если мы дошли до узла под каким то номером
+	if (numNodes == search) {//Р•СЃР»Рё РјС‹ РґРѕС€Р»Рё РґРѕ СѓР·Р»Р° РїРѕРґ РєР°РєРёРј С‚Рѕ РЅРѕРјРµСЂРѕРј
 		*this = newNode;
 		return;
 	}
-	//Поиск по другим узлам если не нашли подходящего номера
+	//РџРѕРёСЃРє РїРѕ РґСЂСѓРіРёРј СѓР·Р»Р°Рј РµСЃР»Рё РЅРµ РЅР°С€Р»Рё РїРѕРґС…РѕРґСЏС‰РµРіРѕ РЅРѕРјРµСЂР°
 	if (left != nullptr and search <= left->getNumNodes()) {
 		left->replaceNode(search, newNode);
 	}
@@ -231,9 +249,9 @@ void Tree::replaceNode(int search, Tree& newNode)//Замена выбранного узла
 	}
 }
 
-void Tree::changeNode(int search, Tree& newNode)//Отличие от replace в том, что не меняются остальные узлы
+void Tree::changeNode(int search, Tree& newNode)//РћС‚Р»РёС‡РёРµ РѕС‚ replace РІ С‚РѕРј, С‡С‚Рѕ РЅРµ РјРµРЅСЏСЋС‚СЃСЏ РѕСЃС‚Р°Р»СЊРЅС‹Рµ СѓР·Р»С‹
 {
-	if (numNodes == search) {//Если мы дошли до узла под каким то номером
+	if (numNodes == search) {//Р•СЃР»Рё РјС‹ РґРѕС€Р»Рё РґРѕ СѓР·Р»Р° РїРѕРґ РєР°РєРёРј С‚Рѕ РЅРѕРјРµСЂРѕРј
 		if (newNode.getLastVertice()) {
 			//*this = newNode;
 			if (newNode.getLastVertice() == lastVertice) {
@@ -266,7 +284,7 @@ void Tree::changeNode(int search, Tree& newNode)//Отличие от replace в том, что 
 				left = new Tree;
 				//left->operator=(*copy.left);
 				*left = Tree(*(newNode.left));
-				left->numNodes = -1;//Сделано для того, чтобы не было изменений в этой ветви
+				left->numNodes = -1;//РЎРґРµР»Р°РЅРѕ РґР»СЏ С‚РѕРіРѕ, С‡С‚РѕР±С‹ РЅРµ Р±С‹Р»Рѕ РёР·РјРµРЅРµРЅРёР№ РІ СЌС‚РѕР№ РІРµС‚РІРё
 			}
 		}
 		return;
@@ -316,7 +334,7 @@ void Tree::trainWithDE(double** x, int size, double K1)
 
 
 	DiffEvolution DE(func, limits, numVertices, "targetToBest1", "max");
-	DE.startSearch(0.01, 0.5, 0.5, 50, 50);
+	DE.startSearch(0.01, 0.5, 0.5, 11, 11);
 	int i = 0;
 	double* coef = DE.getBestCoordinates();
 	changeCoef(coef, i);
